@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Classifier — AI-Powered Spam Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #050a18;
+            --surface: #0d1528;
+            --surface-2: #131d35;
+            --border: #1c2d4a;
+            --border-hover: #2a4070;
+            --text: #e2e8f0;
+            --text-muted: #7a8baa;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --radius: 14px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ambient glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 65%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Layout ── */
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 2rem 2.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Hero — compact top bar */
+        .hero {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.85rem;
+            border-radius: 100px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(99,102,241,0.25);
+            color: var(--accent-hover);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-badge span { font-size: 0.8rem; }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #e2e8f0 30%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Two-column main area */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            flex: 1;
+            align-items: start;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: border-color 0.3s;
+        }
+
+        .card:hover { border-color: var(--border-hover); }
+
+        .card-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title .icon {
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 7px;
+            font-size: 0.88rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Left Column — Classifier ── */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .classify-card { border-color: var(--border-hover); }
+
+        label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 0.8rem 0.9rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.88rem;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea::placeholder { color: #3b4a68; }
+
+        .input-hint {
+            margin-top: 0.3rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .input-hint kbd {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            padding: 0.08rem 0.3rem;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.65rem;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.85rem;
+            border: none;
+            border-radius: 10px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 2px 12px rgba(99,102,241,0.25);
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn:disabled {
+            background: var(--border);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .btn svg { width: 16px; height: 16px; }
+
+        /* Result */
+        .result {
+            margin-top: 1rem;
+            padding: 1rem 1.1rem;
+            border-radius: 10px;
+            display: none;
+            animation: slideUp 0.35s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result.spam {
+            display: block;
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+
+        .result.ham {
+            display: block;
+            background: rgba(34,197,94,0.08);
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+
+        .result.error {
+            display: block;
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+
+        .result-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result.spam .result-label { color: #f87171; }
+        .result.ham .result-label { color: #4ade80; }
+        .result.error .result-label { color: #fbbf24; }
+
+        .result-detail {
+            margin-top: 0.35rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Example chips in left col */
+        .examples-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .example-chip {
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            flex: 1 1 45%;
+            min-width: 0;
+        }
+
+        .example-chip:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+            color: var(--text);
+        }
+
+        .chip-tag {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.15rem;
+        }
+
+        .chip-tag.spam-tag { color: #f87171; }
+        .chip-tag.ham-tag { color: #4ade80; }
+
+        .chip-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Right Column — Info ── */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Mini info grid 2x2 inside right col */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .info-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            transition: border-color 0.3s, transform 0.2s;
+        }
+
+        .info-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .info-card .icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .info-card h3 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-card p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .ic-purple { background: rgba(99,102,241,0.12); }
+        .ic-green  { background: rgba(34,197,94,0.12); }
+        .ic-amber  { background: rgba(245,158,11,0.12); }
+        .ic-blue   { background: rgba(56,189,248,0.12); }
+
+        /* Steps */
+        .steps { display: flex; flex-direction: column; }
+
+        .step {
+            display: flex;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        .step-line {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--accent-hover);
+            flex-shrink: 0;
+        }
+
+        .step-connector {
+            width: 2px;
+            flex: 1;
+            background: var(--border);
+            min-height: 16px;
+        }
+
+        .step:last-child .step-connector { display: none; }
+
+        .step-content { padding-bottom: 1rem; }
+        .step:last-child .step-content { padding-bottom: 0; }
+
+        .step-content h4 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .step-content p {
+            font-size: 0.73rem;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 820px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .left-col {
+                position: static;
+            }
+
+            .page {
+                padding: 1.5rem 1rem 2rem;
+            }
+
+            .hero h1 { font-size: 1.7rem; }
+        }
+
+        @media (max-width: 480px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .examples-row { flex-direction: column; }
+            .example-chip { flex: 1 1 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+
+        <!-- Hero -->
+        <div class="hero">
+            <div class="hero-badge"><span>🤖</span> Machine Learning Powered</div>
+            <h1>Spam Classifier</h1>
+            <p>Intelligent spam detection using NLP &amp; Machine Learning — classify messages as spam or legitimate in real time.</p>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="main-grid">
+
+            <!-- LEFT — Classifier -->
+            <div class="left-col">
+                <div class="card classify-card">
+                    <div class="card-title">
+                        <div class="icon ic-purple">🔍</div>
+                        Classify a Message
+                    </div>
+                    <label for="message">Your Message</label>
+                    <textarea id="message" placeholder="Paste or type any message here — emails, SMS, notifications…"></textarea>
+                    <div class="input-hint">Press <kbd>⌘</kbd> + <kbd>Enter</kbd> to submit</div>
+                    <button class="btn" id="checkBtn" onclick="checkSpam()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Analyze Message
+                    </button>
+
+                    <div class="result" id="result">
+                        <div class="result-label" id="resultLabel"></div>
+                        <div class="result-detail" id="resultDetail"></div>
+                    </div>
+                </div>
+
+                <!-- Quick examples -->
+                <div class="card">
+                    <div class="card-title">
+                        <div class="icon ic-green">💡</div>
+                        Try an Example
+                    </div>
+                    <div class="examples-row">
+                        <div class="example-chip" onclick="loadExample(this)" data-text="Congratulations! You've won a $1,000 Walmart gift card. Click here to claim now!">
+                            <div class="chip-tag spam-tag">Spam</div>
+                            <div class="chip-text">Congratulations! You've won a $1,000…</div>
+                        </div>
+                        <div class="example-chip" onclick="loadExample(this)" data-text="Hey, are we still meeting for lunch tomorrow at noon?">
+                            <div class="chip-tag ham-tag">Not Spam</div>
+                            <div class="chip-text">Hey, are we still meeting for lunch…</div>
+                        </div>
+                        <div class="example-chip" onclick="loadExample(this)" data-text="URGENT: Your account has been compromised. Verify your identity immediately at this link.">
+                            <div class="chip-tag spam-tag">Spam</div>
+                            <div class="chip-text">URGENT: Your account has been…</div>
+                        </div>
+                        <div class="example-chip" onclick="loadExample(this)" data-text="Just wanted to follow up on the project proposal I sent last week. Let me know your thoughts.">
+                            <div class="chip-tag ham-tag">Not Spam</div>
+                            <div class="chip-text">Follow up on the project proposal…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT — Description & Info -->
+            <div class="right-col">
+
+                <!-- Tech cards -->
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="icon-circle ic-purple">📊</div>
+                        <h3>TF-IDF Vectorization</h3>
+                        <p>Converts messages into numerical vectors using Term Frequency–Inverse Document Frequency to capture word importance.</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="icon-circle ic-green">🧠</div>
+                        <h3>Naive Bayes Model</h3>
+                        <p>A Multinomial Naive Bayes classifier trained on labeled SMS data uses probability to detect spam.</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="icon-circle ic-amber">🧹</div>
+                        <h3>Text Preprocessing</h3>
+                        <p>Input is cleaned and normalized — noise is stripped and email parts are extracted before analysis.</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="icon-circle ic-blue">⚡</div>
+                        <h3>Real-Time API</h3>
+                        <p>Built on FastAPI for instant inference. Use this UI or send a POST to <code style="color:var(--accent-hover);font-size:0.7rem;">/predict</code>.</p>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="card">
+                    <div class="card-title">
+                        <div class="icon ic-amber">⚙️</div>
+                        How It Works
+                    </div>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-line"><div class="step-dot">1</div><div class="step-connector"></div></div>
+                            <div class="step-content">
+                                <h4>Input a Message</h4>
+                                <p>Paste any text — an email, SMS, or notification — into the box on the left.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-line"><div class="step-dot">2</div><div class="step-connector"></div></div>
+                            <div class="step-content">
+                                <h4>Text Cleaning &amp; Feature Extraction</h4>
+                                <p>The message is cleaned and transformed into a TF-IDF feature vector.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-line"><div class="step-dot">3</div><div class="step-connector"></div></div>
+                            <div class="step-content">
+                                <h4>ML Prediction</h4>
+                                <p>The Naive Bayes classifier evaluates the vector and predicts spam or ham.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-line"><div class="step-dot">4</div><div class="step-connector"></div></div>
+                            <div class="step-content">
+                                <h4>Instant Result</h4>
+                                <p>You get a clear, color-coded verdict — spam or safe — in real time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer">
+            Spam Classifier &mdash; Built with FastAPI, scikit-learn &amp; Multinomial Naive Bayes
+        </div>
+    </div>
+
+    <script>
+        async function checkSpam() {
+            const message = document.getElementById('message').value.trim();
+            const btn = document.getElementById('checkBtn');
+            const result = document.getElementById('result');
+            const resultLabel = document.getElementById('resultLabel');
+            const resultDetail = document.getElementById('resultDetail');
+
+            if (!message) {
+                result.className = 'result error';
+                resultLabel.textContent = '⚠️ Please enter a message first.';
+                resultDetail.textContent = '';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Analyzing…';
+            result.className = 'result';
+            result.style.display = 'none';
+
+            try {
+                const res = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Server error');
+                }
+
+                const data = await res.json();
+                const isSpam = data.spam;
+
+                result.className = isSpam ? 'result spam' : 'result ham';
+                resultLabel.textContent = isSpam
+                    ? '🚫 Spam Detected'
+                    : '✅ Not Spam — Looks Legit';
+                resultDetail.textContent = `Processed message: "${data.message}"`;
+            } catch (err) {
+                result.className = 'result error';
+                resultLabel.textContent = '⚠️ Something went wrong';
+                resultDetail.textContent = err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Analyze Message`;
+            }
+        }
+
+        function loadExample(el) {
+            const text = el.getAttribute('data-text');
+            document.getElementById('message').value = text;
+            document.getElementById('message').focus();
+        }
+
+        document.getElementById('message').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) checkSpam();
+        });
+    </script>
+</body>
+</html>
