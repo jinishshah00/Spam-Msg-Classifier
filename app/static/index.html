@@ -660,12 +660,14 @@
                 const isSpam = data.spam;
 
                 result.className = isSpam ? 'result spam' : 'result ham';
+                result.style.display = 'block';
                 resultLabel.textContent = isSpam
                     ? '🚫 Spam Detected'
                     : '✅ Not Spam — Looks Legit';
                 resultDetail.textContent = `Processed message: "${data.message}"`;
             } catch (err) {
                 result.className = 'result error';
+                result.style.display = 'block';
                 resultLabel.textContent = '⚠️ Something went wrong';
                 resultDetail.textContent = err.message;
             } finally {

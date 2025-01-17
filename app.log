@@ -47,3 +47,7 @@
 2025-05-21 18:39:24,970 - spam_detector - INFO - Cleaned body: Subject:ready to travel to Nigeria
 2025-05-21 18:39:24,972 - spam_detector - INFO - Spam detection result: False
 2026-02-25 01:30:02,996 - spam_detector - INFO - Cleaned body: Congratulations! You've won a free ticket!
+2026-02-25 02:38:32,031 - spam_detector - INFO - Cleaned body: Congratulations! You've won a $1,000 Walmart gift card. Click here to claim now!
+2026-02-25 02:43:45,330 - spam_detector - INFO - Cleaned body: Congratulations! You've won a $1,000 Walmart gift card. Click here to claim now!
+2026-02-25 02:43:49,533 - spam_detector - INFO - Cleaned body: Hey, are we still meeting for lunch tomorrow at noon?
+2026-02-25 02:43:52,071 - spam_detector - INFO - Cleaned body: URGENT: Your account has been compromised. Verify your identity immediately at this link.
