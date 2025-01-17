@@ -11,6 +11,8 @@ Built with Python · FastAPI · scikit-learn · Naive Bayes
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-spam--msg--classifier.up.railway.app-6366f1?style=for-the-badge)](https://spam-msg-classifier.up.railway.app)
+
 </div>
 
 ---
